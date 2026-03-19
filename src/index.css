@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: #0c0a09;
+  color: #ffffff;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: 'Syne', sans-serif;
+}
+
+.font-mono-custom {
+  font-family: 'DM Mono', 'JetBrains Mono', monospace;
+}
+
+/* Gradient text — orange */
+.gradient-text {
+  background: linear-gradient(135deg, #FF6B00 0%, #FF9A00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient text — blue */
+.gradient-text-blue {
+  background: linear-gradient(135deg, #2962FF 0%, #00D4FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Warm subtle grid */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 180, 80, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 180, 80, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Agent pulse */
+@keyframes agent-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+.agent-pulse { animation: agent-pulse 1.4s ease-in-out infinite; }
+
+/* Fade in up — hero entrance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in-up         { animation: fadeInUp 0.8s cubic-bezier(0.16,1,0.3,1) both; }
+.fade-in-up-delay-1 { animation: fadeInUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s both; }
+.fade-in-up-delay-2 { animation: fadeInUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
+.fade-in-up-delay-3 { animation: fadeInUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.45s both; }
+
+/* Card hover lift */
+.card-hover { transition: transform 0.22s ease, border-color 0.22s ease; }
+.card-hover:hover { transform: translateY(-4px); }
+
+/* TX confirmation glow */
+.tx-glow { box-shadow: 0 0 30px rgba(0, 192, 118, 0.15); }
+
+/* Orange glow */
+.orange-glow { box-shadow: 0 0 80px rgba(255, 107, 0, 0.12); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0c0a09; }
+::-webkit-scrollbar-thumb { background: #2a2826; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3835; }
