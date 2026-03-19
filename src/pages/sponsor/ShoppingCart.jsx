@@ -4,7 +4,7 @@ import { useCart } from "../../contexts/CartContext";
 import { useWallet } from "../../contexts/WalletContext";
 import { useEvents } from "../../contexts/OrganizerContext";
 import { agentPayX402 } from "../../lib/x402";
-import { CONTRACT_ADDRESS } from "../../lib/contract";
+import { CONTRACT_ADDRESS, recordSponsorship } from "../../lib/contract";
 
 const STEPS = ["Cart", "Review", "Confirmed"];
 
