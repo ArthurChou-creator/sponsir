@@ -1,56 +1,24 @@
 /**
  * OKX Onchain OS — Balance API + Transaction History API
+ * API calls are proxied through Vercel serverless functions (keys never exposed to client)
  */
 
-const API_KEY    = import.meta.env.VITE_OKX_API_KEY;
-const SECRET_KEY = import.meta.env.VITE_OKX_SECRET_KEY;
-const PASSPHRASE = import.meta.env.VITE_OKX_PASSPHRASE;
-
-const BASE = '/okx-api';
 const X_LAYER = '196';
-
-// USDG on X Layer
 const USDG_ADDRESS = '0x4ae46a509f6b1d9056937ba4500cb143933d2dc8';
-
-async function hmacSha256Base64(secret, message) {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw', enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false, ['sign']
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
-  return btoa(String.fromCharCode(...new Uint8Array(sig)));
-}
-
-async function okxHeaders(method, path, body = '') {
-  const timestamp = new Date().toISOString();
-  const signature = await hmacSha256Base64(SECRET_KEY, timestamp + method + path + body);
-  return {
-    'Content-Type': 'application/json',
-    'OK-ACCESS-KEY': API_KEY,
-    'OK-ACCESS-SIGN': signature,
-    'OK-ACCESS-PASSPHRASE': PASSPHRASE,
-    'OK-ACCESS-TIMESTAMP': timestamp,
-  };
-}
 
 // ─── Balance API ──────────────────────────────────────────────────────────────
 
-/**
- * Get USDG balance for a wallet on X Layer
- * @returns {{ balance: number, rawBalance: string, price: string }}
- */
 export async function getUSDGBalance(address) {
-  const path = '/api/v6/dex/balance/token-balances-by-address';
-  const body = JSON.stringify({
-    address,
-    tokenContractAddresses: [
-      { chainIndex: X_LAYER, tokenContractAddress: USDG_ADDRESS },
-    ],
+  const res = await fetch('/api/balance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      address,
+      tokenContractAddresses: [
+        { chainIndex: X_LAYER, tokenContractAddress: USDG_ADDRESS },
+      ],
+    }),
   });
-  const headers = await okxHeaders('POST', path, body);
-  const res = await fetch(BASE + path, { method: 'POST', headers, body });
   const data = await res.json();
   if (data.code !== '0') throw new Error(`Balance API error: ${data.msg}`);
 
@@ -62,14 +30,8 @@ export async function getUSDGBalance(address) {
   };
 }
 
-/**
- * Get all token balances for a wallet on X Layer
- * @returns {Array} tokenAssets
- */
 export async function getAllBalances(address) {
-  const path = `/api/v6/dex/balance/all-token-balances-by-address?address=${address}&chains=${X_LAYER}`;
-  const headers = await okxHeaders('GET', path);
-  const res = await fetch(BASE + path, { method: 'GET', headers });
+  const res = await fetch(`/api/all-balances?address=${address}&chains=${X_LAYER}`);
   const data = await res.json();
   if (data.code !== '0') throw new Error(`Balance API error: ${data.msg}`);
   return data.data?.[0]?.tokenAssets || [];
@@ -77,14 +39,8 @@ export async function getAllBalances(address) {
 
 // ─── Transaction History API ──────────────────────────────────────────────────
 
-/**
- * Get transaction history for a wallet on X Layer
- * @returns {Array} transactions
- */
 export async function getTransactionHistory(address, limit = 50) {
-  const path = `/api/v6/dex/post-transaction/transactions-by-address?address=${address}&chains=${X_LAYER}&limit=${limit}`;
-  const headers = await okxHeaders('GET', path);
-  const res = await fetch(BASE + path, { method: 'GET', headers });
+  const res = await fetch(`/api/transactions?address=${address}&chains=${X_LAYER}&limit=${limit}`);
   const data = await res.json();
   if (data.code !== '0') throw new Error(`Transaction History API error: ${data.msg}`);
   return data.data?.[0]?.transactionList || [];
@@ -92,10 +48,6 @@ export async function getTransactionHistory(address, limit = 50) {
 
 // ─── Credibility Score ────────────────────────────────────────────────────────
 
-/**
- * Calculate an Onchain Credibility Score (0–100) for a wallet
- * Based on: transaction count, wallet age, asset holdings
- */
 export async function getCredibilityScore(address) {
   try {
     const [txs, balances] = await Promise.all([
@@ -103,11 +55,9 @@ export async function getCredibilityScore(address) {
       getAllBalances(address),
     ]);
 
-    // 1. Transaction count (0–40 pts)
     const txCount = txs.length;
     const txScore = Math.min(txCount / 100 * 40, 40);
 
-    // 2. Wallet age from oldest tx (0–35 pts)
     let ageScore = 0;
     if (txs.length > 0) {
       const oldest = Math.min(...txs.map(t => parseInt(t.txTime || Date.now())));
@@ -116,7 +66,6 @@ export async function getCredibilityScore(address) {
       ageScore = Math.min(ageDays / 365 * 35, 35);
     }
 
-    // 3. Has stablecoins / assets (0–25 pts)
     const totalValue = balances.reduce((sum, a) => {
       return sum + (parseFloat(a.balance || 0) * parseFloat(a.tokenPrice || 0));
     }, 0);
@@ -124,7 +73,7 @@ export async function getCredibilityScore(address) {
 
     const total = Math.round(txScore + ageScore + assetScore);
     return {
-      score: Math.max(total, 5), // min 5 to avoid showing 0
+      score: Math.max(total, 5),
       txCount,
       ageScore: Math.round(ageScore),
       assetScore: Math.round(assetScore),
