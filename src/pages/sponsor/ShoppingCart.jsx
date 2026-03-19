@@ -4,7 +4,7 @@ import { useCart } from "../../contexts/CartContext";
 import { useWallet } from "../../contexts/WalletContext";
 import { useEvents } from "../../contexts/OrganizerContext";
 import { agentPayX402 } from "../../lib/x402";
-import { CONTRACT_ADDRESS, recordSponsorship } from "../../lib/contract";
+import { CONTRACT_ADDRESS } from "../../lib/contract";
 
 const STEPS = ["Cart", "Review", "Confirmed"];
 
@@ -31,16 +31,6 @@ export default function ShoppingCart() {
       });
       const result = { hash: txHash, blockExplorer: `https://www.okx.com/explorer/xlayer/tx/${txHash}` };
 
-      // Record each sponsorship onchain (best-effort, silent if OKB unavailable)
-      cartItems.forEach((item) => {
-        recordSponsorship({
-          eventId:    item.eventId,
-          planId:     item.planId,
-          eventTitle: item.eventTitle,
-          planTitle:  item.planTitle,
-          price:      item.price,
-        }).catch(() => {});
-      });
 
       // Enrich cart items with event metadata before clearing
       const enriched = cartItems.map((item) => {
